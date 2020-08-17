@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\User;
 use App\Address;
 use App\Post;
+use App\Role;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -111,4 +112,91 @@ Route::get('/update-2/{uid}/{pid}',function ($uid,$pid){
 //    $post->save();
    $user->posts()->whereId($pid)->update(['title'=>'updated title']);
 
+});
+
+
+Route::get('/readmany/{uid}',function ($uid){
+    $user = User::find($uid);
+    return $user->posts;
+});
+
+Route::get('/deletemamy/{uid}/{pid}',function ($uid,$pid){
+    $user = User::findOrFail($uid);
+    $user->posts()->whereId($pid)->delete();
+});
+
+
+/*
+ * Many to Many Relationship
+ */
+
+Route::get('create-role',function (){
+    $user = User::findOrFail(1);
+    $role = new Role(['name'=>'Contributor']);
+    $user->roles()->save($role);
+});
+
+
+Route::get('/read-role',function (){
+
+    $user = User::findOrFail(1);
+    foreach ($user->roles as $role){
+        echo $role->name."<br>";
+    }
+});
+
+
+Route::get('/update-role',function (){
+
+    $user = User::findOrFail(1);
+    //$user->roles()->where('role_id',1)->update(['name'=>'contributor']); // one way
+
+    if ($user->has('roles')){ // anoher way
+        foreach ($user->roles as $role){
+            if ($role->name == 'contributor'){
+                $role->name = 'administrator';
+                $role->save();
+
+            }
+        }
+    }
+
+});
+
+
+Route::get('/delete-role',function (){
+
+    $user = User::findOrFail(1);
+
+    foreach ($user->roles as $role){
+        //dd($role);
+        $role->whereId(2)->delete();
+    }
+});
+
+/*
+ * attaching, detaching and syncing
+ */
+
+Route::get('/attach',function (){
+
+    $user = User::find(5);
+    $user->roles()->attach(4); // always expected one parameter
+
+});
+
+Route::get('/detach',function (){
+
+    $user = User::find(1);
+    $user->roles()->detach(); // delete all records
+    $user->roles()->detach(4); // delete only uid-1 and rid-4
+
+});
+
+Route::get('/sync',function (){
+
+    $user = User::findOrFail(1);
+    $user->roles()->sync([3,4,5]); // added this at a time
+    $user->roles()->sync([3]); // if i execute afted added then it removes 4 and 5 and added only 3
+    $user->roles()->sync([3,4,5]);
 });
